@@ -1,6 +1,6 @@
+const mysql = require('mysql2');
 const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2');
 
 const app = express();
 app.use(cors());
@@ -21,15 +21,17 @@ db.connect(err => {
   console.log('Connected to database.');
 });
 
+// Fetch all flashcards
 app.get('/api/flashcards', (req, res) => {
   db.query('SELECT * FROM flashcards', (err, results) => {
     if (err) {
       return res.status(500).send(err);
     }
-    res.json(results);
+    res.json(results); // Ensure this is sending the correct data format
   });
 });
 
+// Add a new flashcard
 app.post('/api/flashcards', (req, res) => {
   const { question, answer } = req.body;
   db.query('INSERT INTO flashcards (question, answer) VALUES (?, ?)', [question, answer], (err, results) => {
@@ -37,27 +39,6 @@ app.post('/api/flashcards', (req, res) => {
       return res.status(500).send(err);
     }
     res.json({ id: results.insertId, question, answer });
-  });
-});
-
-app.put('/api/flashcards/:id', (req, res) => {
-  const { id } = req.params;
-  const { question, answer } = req.body;
-  db.query('UPDATE flashcards SET question = ?, answer = ? WHERE id = ?', [question, answer, id], (err, results) => {
-    if (err) {
-      return res.status(500).send(err);
-    }
-    res.json(results);
-  });
-});
-
-app.delete('/api/flashcards/:id', (req, res) => {
-  const { id } = req.params;
-  db.query('DELETE FROM flashcards WHERE id = ?', [id], (err, results) => {
-    if (err) {
-      return res.status(500).send(err);
-    }
-    res.json(results);
   });
 });
 

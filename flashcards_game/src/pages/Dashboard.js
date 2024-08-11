@@ -1,89 +1,55 @@
 import React, { useState } from 'react';
-import { getFlashcards, addFlashcard, editFlashcard, deleteFlashcard } from '../services/flashcardService';
 
-const Dashboard = () => {
-  const [flashcards, setFlashcards] = useState(getFlashcards());
+const Dashboard = ({ onFlashcardsUpdate }) => {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
-  const [editId, setEditId] = useState(null);
 
-  const handleAdd = () => {
-    addFlashcard(question, answer);
-    setFlashcards(getFlashcards());
-    setQuestion('');
-    setAnswer('');
-  };
+  const handleAddFlashcard = () => {
+    const newFlashcard = { question, answer };
 
-  const handleEdit = (id) => {
-    const card = flashcards.find(card => card.id === id);
-    setQuestion(card.question);
-    setAnswer(card.answer);
-    setEditId(id);
-  };
-
-  const handleUpdate = () => {
-    editFlashcard(editId, question, answer);
-    setFlashcards(getFlashcards());
-    setQuestion('');
-    setAnswer('');
-    setEditId(null);
-  };
-
-  const handleDelete = (id) => {
-    deleteFlashcard(id);
-    setFlashcards(getFlashcards());
+    fetch('/api/flashcards', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newFlashcard),
+    })
+      .then(response => response.json())
+      .then(data => {
+        onFlashcardsUpdate(data); // Notify parent component of the new flashcard
+        setQuestion('');
+        setAnswer('');
+      })
+      .catch(error => console.error('Error adding flashcard:', error));
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
-
+    <div className="container mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
       <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">Question:</label>
         <input
           type="text"
-          placeholder="Question"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          className="p-2 border border-gray-300 rounded mr-2"
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         />
+      </div>
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2">Answer:</label>
         <input
           type="text"
-          placeholder="Answer"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
-          className="p-2 border border-gray-300 rounded mr-2"
+          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         />
-        {editId ? (
-          <button onClick={handleUpdate} className="px-4 py-2 bg-blue-600 text-white rounded">Update</button>
-        ) : (
-          <button onClick={handleAdd} className="px-4 py-2 bg-green-600 text-white rounded">Add</button>
-        )}
       </div>
-
-      <div>
-        {flashcards.map(card => (
-          <div key={card.id} className="flex justify-between items-center bg-white p-4 mb-2 shadow rounded">
-            <div>
-              <p className="font-semibold">{card.question}</p>
-              <p>{card.answer}</p>
-            </div>
-            <div>
-              <button
-                onClick={() => handleEdit(card.id)}
-                className="px-4 py-2 bg-yellow-600 text-white rounded mr-2"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(card.id)}
-                className="px-4 py-2 bg-red-600 text-white rounded"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      <button
+        onClick={handleAddFlashcard}
+        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+      >
+        Add Flashcard
+      </button>
     </div>
   );
 };
