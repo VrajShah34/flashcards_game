@@ -1,29 +1,59 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import FlashcardList from './components/FlashcardList';
-import Navigation from './components/Navigation';
+import React, { useState, useEffect } from 'react';
 import Dashboard from './pages/Dashboard';
 
 const App = () => {
-  const flashcards = [
-    { question: 'What is React?', answer: 'A JavaScript library for building user interfaces.' },
-    { question: 'What is a Component?', answer: 'Reusable pieces of UI in a React application.' },
-    { question: 'What is State?', answer: 'A way to store and manage data in a React component.' },
-  ];
+  const [flashcards, setFlashcards] = useState([]);
+  const [view, setView] = useState('home');
+
+  useEffect(() => {
+    const fetchFlashcards = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/flashcards'); // Ensure the URL matches your backend setup
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        console.log(data);
+        setFlashcards(data); // Ensure this is storing the fetched flashcards correctly
+      } catch (error) {
+        console.error('Error fetching flashcards:', error);
+      }
+    };
+
+    fetchFlashcards();
+  }, []);
+
+  const handleFlashcardsUpdate = (newFlashcard) => {
+    setFlashcards([...flashcards, newFlashcard]);
+  };
 
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-100 p-4">
-        <nav className="mb-4">
-          <Link to="/" className="mr-4 text-blue-600">Home</Link>
-          <Link to="/dashboard" className="text-blue-600">Admin Dashboard</Link>
-        </nav>
-        <Routes>
-          <Route path="/" element={<FlashcardList cards={flashcards} />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </div>
-    </Router>
+    <div>
+      <nav className="bg-blue-500 p-4 text-white">
+        <button onClick={() => setView('home')} className="mr-4">Home</button>
+        <button onClick={() => setView('dashboard')}>Admin Dashboard</button>
+      </nav>
+
+      {view === 'home' ? (
+        <div className="p-4">
+          <h1 className="text-2xl font-bold mb-4">Flashcards</h1>
+          {flashcards.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {flashcards.map((flashcard) => (
+                <div key={flashcard.id} className="bg-white shadow-lg p-6 rounded-lg">
+                  <div className="question text-xl font-semibold">{flashcard.question}</div>
+                  <div className="answer mt-2 text-gray-700">{flashcard.answer}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No flashcards available. Please add some in the Admin Dashboard.</p>
+          )}
+        </div>
+      ) : (
+        <Dashboard onFlashcardsUpdate={handleFlashcardsUpdate} />
+      )}
+    </div>
   );
 };
 
