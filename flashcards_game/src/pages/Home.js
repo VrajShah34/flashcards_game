@@ -37,22 +37,22 @@ const Home = () => {
 
   return (
     <div>
-      <Navbar onLogout={() => {}} />  {/* Add Navbar here */}
+      <Navbar />  {/* Add Navbar here */}
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-        <div className="relative w-full max-w-md">
+        <div className="relative w-full max-w-lg"> {/* Increased the size */}
           <div
-            className={`transition-transform duration-500 transform ${flipped ? 'rotate-y-180' : ''} bg-white p-6 rounded shadow-lg`}
-            style={{ transformStyle: 'preserve-3d' }}
+            className={`transition-transform duration-500 transform ${flipped ? 'rotate-y-180' : ''} bg-white p-8 shadow-lg rounded-lg`}
+            style={{ transformStyle: 'preserve-3d', height: '300px', width: '500px' }} // Correct inline styles syntax
             onClick={handleFlip}
           >
             <div className="absolute inset-0 flex items-center justify-center backface-hidden">
-              <p className="text-xl font-bold">{flashcards[currentIndex].question}</p>
+              <p className="text-2xl font-bold">{flashcards[currentIndex].question}</p>
             </div>
-            <div className="absolute inset-0 flex items-center justify-center bg-blue-500 text-white backface-hidden rotate-y-180">
-              <p className="text-xl font-bold">{flashcards[currentIndex].answer}</p>
+            <div className="absolute inset-0 flex  justify-center bg-yellow-200 text-black backface-hidden rotate-y-180  rounded-lg p-4 items-center">
+              <p className="text-2xl font-bold">{flashcards[currentIndex].answer}</p>
             </div>
           </div>
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between mt-7">
             <button onClick={handlePrev} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
               Previous
             </button>
