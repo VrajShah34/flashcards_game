@@ -25,4 +25,17 @@
   .transition-opacity {
     transition: opacity 0.3s ease-in-out;
   }
+
+  
+body {
+  @apply bg-gray-100 text-gray-900;
+}
+
+h1, h2, h3 {
+  @apply font-bold text-gray-800;
+}
+
+button {
+  @apply transition duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg;
+}
   

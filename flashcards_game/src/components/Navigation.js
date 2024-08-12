@@ -1,24 +1,15 @@
-import React from 'react';
 
-const Navigation = ({ currentIndex, total, onPrev, onNext }) => {
+import React from 'react';
+import Flashcard from './Flashcard';
+
+const FlashcardList = ({ cards }) => {
   return (
-    <div className="flex justify-between mt-8">
-      <button
-        onClick={onPrev}
-        disabled={currentIndex === 0}
-        className="px-4 py-2 bg-gray-800 text-white rounded-md disabled:bg-gray-400"
-      >
-        Previous
-      </button>
-      <button
-        onClick={onNext}
-        disabled={currentIndex === total - 1}
-        className="px-4 py-2 bg-gray-800 text-white rounded-md disabled:bg-gray-400"
-      >
-        Next
-      </button>
+    <div className="flex flex-col items-center justify-center space-y-4">
+      {cards.map((card, index) => (
+        <Flashcard key={index} card={card} />
+      ))}
     </div>
   );
 };
 
-export default Navigation;
+export default FlashcardList;
