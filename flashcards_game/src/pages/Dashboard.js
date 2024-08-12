@@ -1,55 +1,131 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Dashboard = ({ onFlashcardsUpdate }) => {
+  const [flashcards, setFlashcards] = useState([]);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [editMode, setEditMode] = useState(false);
+  const [currentId, setCurrentId] = useState(null);
 
-  const handleAddFlashcard = () => {
-    const newFlashcard = { question, answer };
+  useEffect(() => {
+    const fetchFlashcards = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/flashcards');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setFlashcards(data);
+      } catch (error) {
+        console.error('Error fetching flashcards:', error);
+      }
+    };
 
-    fetch('/api/flashcards', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(newFlashcard),
-    })
-      .then(response => response.json())
-      .then(data => {
-        onFlashcardsUpdate(data); // Notify parent component of the new flashcard
-        setQuestion('');
-        setAnswer('');
-      })
-      .catch(error => console.error('Error adding flashcard:', error));
+    fetchFlashcards();
+  }, []);
+
+  const handleAddOrUpdateFlashcard = async () => {
+    if (editMode) {
+      await fetch(`http://localhost:5000/api/flashcards/${currentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, answer }),
+      });
+    } else {
+      const response = await fetch('http://localhost:5000/api/flashcards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, answer }),
+      });
+      const newFlashcard = await response.json();
+      onFlashcardsUpdate(newFlashcard);
+    }
+
+    setEditMode(false);
+    setQuestion('');
+    setAnswer('');
+    setCurrentId(null);
+    const fetchUpdatedFlashcards = async () => {
+      const response = await fetch('http://localhost:5000/api/flashcards');
+      const updatedData = await response.json();
+      setFlashcards(updatedData);
+    };
+    fetchUpdatedFlashcards();
+  };
+
+  const handleEditFlashcard = (id, currentQuestion, currentAnswer) => {
+    setEditMode(true);
+    setQuestion(currentQuestion);
+    setAnswer(currentAnswer);
+    setCurrentId(id);
+  };
+
+  const handleDeleteFlashcard = async (id) => {
+    await fetch(`http://localhost:5000/api/flashcards/${id}`, {
+      method: 'DELETE',
+    });
+
+    const fetchUpdatedFlashcards = async () => {
+      const response = await fetch('http://localhost:5000/api/flashcards');
+      const updatedData = await response.json();
+      setFlashcards(updatedData);
+    };
+    fetchUpdatedFlashcards();
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Admin Dashboard</h2>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">Question:</label>
         <input
           type="text"
+          placeholder="Question"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="border p-2 rounded w-full mb-2"
         />
-      </div>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">Answer:</label>
         <input
           type="text"
+          placeholder="Answer"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
-          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          className="border p-2 rounded w-full mb-2"
         />
+        <button
+          onClick={handleAddOrUpdateFlashcard}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+        >
+          {editMode ? 'Update Flashcard' : 'Add Flashcard'}
+        </button>
       </div>
-      <button
-        onClick={handleAddFlashcard}
-        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-      >
-        Add Flashcard
-      </button>
+
+      <div>
+        <h2 className="text-xl font-bold mb-2">Manage Flashcards</h2>
+        <ul>
+          {flashcards.map((flashcard) => (
+            <li key={flashcard.id} className="mb-2 p-2 border rounded flex justify-between items-center">
+              <div>
+                <p className="font-semibold">{flashcard.question}</p>
+                <p className="text-gray-600">{flashcard.answer}</p>
+              </div>
+              <div>
+                <button
+                  onClick={() => handleEditFlashcard(flashcard.id, flashcard.question, flashcard.answer)}
+                  className="bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-1 px-2 rounded mr-2"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteFlashcard(flashcard.id)}
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };
