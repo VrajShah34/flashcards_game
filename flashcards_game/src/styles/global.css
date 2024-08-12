@@ -1,8 +1,20 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Global Styles */
-body {
-  font-family: 'Roboto', sans-serif;
+@keyframes flip {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(180deg);
+  }
+}
+
+.flip {
+  animation: flip 0.6s forwards;
+}
+
+.flip-flipped {
+  transform: rotateY(180deg);
 }

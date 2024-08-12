@@ -1,83 +1,134 @@
-const express = require('express');
-const mysql = require('mysql2');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
+import mysql from 'mysql2/promise';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const db = mysql.createConnection({
+const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '1111password',
-  database: 'flashcards_db',
+  database: 'flashcards_db'
 });
-
-db.connect((err) => {
-  if (err) {
-    console.error('Error connecting to MySQL:', err);
-    return;
+(async () => {
+  try {
+    const connection = await pool.getConnection();
+    console.log('Connected to DB');
+    connection.release();
+  } catch (err) {
+    console.error('Error connecting to the database:', err);
   }
-  console.log('Connected to MySQL');
-});
+})();
+// Flashcard Routes
 
 // Get all flashcards
-app.get('/api/flashcards', (req, res) => {
-  const query = 'SELECT * FROM flashcards';
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error('Error fetching flashcards:', err);
-      res.status(500).send('Server error');
-    } else {
-      res.json(results);
-    }
-  });
+app.get('/api/flashcards', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM flashcards');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching flashcards' });
+  }
 });
 
 // Add a flashcard
-app.post('/api/flashcards', (req, res) => {
+app.post('/api/flashcards', async (req, res) => {
   const { question, answer } = req.body;
-  const query = 'INSERT INTO flashcards (question, answer) VALUES (?, ?)';
-  db.query(query, [question, answer], (err, result) => {
-    if (err) {
-      console.error('Error adding flashcard:', err);
-      res.status(500).send('Server error');
-    } else {
-      const newFlashcard = { id: result.insertId, question, answer };
-      res.status(201).json(newFlashcard);
-    }
-  });
+
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO flashcards (question, answer) VALUES (?, ?)',
+      [question, answer]
+    );
+    res.status(201).json({ message: 'Flashcard added successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error adding flashcard' });
+  }
 });
 
-// Update a flashcard
-app.put('/api/flashcards/:id', (req, res) => {
+// Edit a flashcard
+app.put('/api/flashcards/:id', async (req, res) => {
   const { id } = req.params;
   const { question, answer } = req.body;
-  const query = 'UPDATE flashcards SET question = ?, answer = ? WHERE id = ?';
-  db.query(query, [question, answer, id], (err) => {
-    if (err) {
-      console.error('Error updating flashcard:', err);
-      res.status(500).send('Server error');
-    } else {
-      res.sendStatus(204);
-    }
-  });
+
+  try {
+    const [result] = await pool.query(
+      'UPDATE flashcards SET question = ?, answer = ? WHERE id = ?',
+      [question, answer, id]
+    );
+    res.json({ message: 'Flashcard updated successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error updating flashcard' });
+  }
 });
 
 // Delete a flashcard
-app.delete('/api/flashcards/:id', (req, res) => {
+app.delete('/api/flashcards/:id', async (req, res) => {
   const { id } = req.params;
-  const query = 'DELETE FROM flashcards WHERE id = ?';
-  db.query(query, [id], (err) => {
-    if (err) {
-      console.error('Error deleting flashcard:', err);
-      res.status(500).send('Server error');
-    } else {
-      res.sendStatus(204);
-    }
-  });
+
+  try {
+    const [result] = await pool.query('DELETE FROM flashcards WHERE id = ?', [id]);
+    res.json({ message: 'Flashcard deleted successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error deleting flashcard' });
+  }
 });
 
-app.listen(5000, () => {
-  console.log('Server is running on port 5000');
+// Authentication Routes
+
+// Register Route
+app.post('/api/auth/register', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Store user in database
+    const [result] = await pool.query(
+      'INSERT INTO users (username, password) VALUES (?, ?)',
+      [username, hashedPassword]
+    );
+
+    res.status(201).json({ message: 'User registered successfully!' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error registering user' });
+  }
 });
+
+// Login Route
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  try {
+    // Get user from database
+    const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+
+    if (rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid username or password' });
+    }
+
+    const user = rows[0];
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Invalid username or password' });
+    }
+
+    // Create JWT token
+    const token = jwt.sign({ id: user.id }, 'your_jwt_secret', { expiresIn: '1h' });
+
+    res.json({ message: 'Login successful', token });
+  } catch (err) {
+    res.status(500).json({ error: 'Error logging in user' });
+  }
+});
+
+const port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`Server running on port ${port}`));
