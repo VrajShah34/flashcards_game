@@ -39,7 +39,11 @@ const Home = () => {
     <div>
       <Navbar onLogout={() => {}} />  {/* Add Navbar here */}
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <h1 className='pb-20 pt-0 text-4xl'>
+            Flashcards Game
+      </h1>
         <div className="relative w-full max-w-lg"> {/* Increased the size */}
+          
           <div
             className={`transition-transform duration-500 transform ${flipped ? 'rotate-y-180' : ''} bg-white p-8 shadow-lg rounded-lg`}
             style={{ transformStyle: 'preserve-3d', height: '300px', width: '500px' }} // Correct inline styles syntax
